@@ -1,0 +1,55 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 11/29/2020 05:44:12 PM
+// Design Name: 
+// Module Name: ALUwithControls1
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+module ALUwithControls1 (addr_cal, ALU_SE_addr, rd_data_1, rd_data_2, 
+                    ALU_op, Opcode_field, ALU_out, Zero);
+   
+    //Declare inputs and outputs and intermediate 'wires'
+    input addr_cal;
+    input [63:0] ALU_SE_addr;
+    input [63:0] rd_data_1, rd_data_2;    
+    input [1:0]  ALU_op;
+    input [10:0] Opcode_field;
+    //output signals
+    output wire  [63:0]  ALU_out;
+    output wire  Zero;
+    
+    //internal signal
+    wire [3:0]  operation_wire; //add, and, sub, or
+    wire [63:0] A_wire;
+    wire [63:0] B_wire;
+                 
+    assign A_wire = rd_data_1;   //Rn[9:5]       
+    assign B_wire = (addr_cal)? ALU_SE_addr: rd_data_2;          
+                                           //Rm[20:16]
+    LEGv8ALU_control ALUCTRL_unit (
+            .ALU_op(ALU_op), 
+            .Opcode_field(Opcode_field), 
+            .ALU_operation(operation_wire));
+       
+    LEGv8ALU ALU_unit (
+            .ALU_operation(operation_wire), 
+            .A(A_wire), 
+            .B(B_wire), 
+            .ALU_result(ALU_out), 
+            .Zero(Zero));                
+endmodule
+

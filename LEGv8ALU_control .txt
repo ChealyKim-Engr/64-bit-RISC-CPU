@@ -1,0 +1,72 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: CECS 530
+// Engineer: Julie Kim
+// 
+// Create Date: 09/12/2019 12:40:28 PM
+// Design Name: 
+// Module Name: LEGv8ALU_control
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+module LEGv8ALU_control (ALU_operation, Opcode_field, ALU_op);
+    input [1:0] ALU_op;
+    input [10:0] Opcode_field;
+    output reg [3:0] ALU_operation;
+    
+    always @ (ALU_op, Opcode_field)
+        case (ALU_op)
+            2'b00:
+              begin
+                case (Opcode_field)
+                    11'b11111000010: ALU_operation <= 4'b0010;  //ADD operation for LOAD
+                    11'b11111000000: ALU_operation <= 4'b0010;  //ADD operation for STORE
+                    default ALU_operation <= 4'b1100; //NOR opration
+                endcase              
+              end
+            2'b01: 
+                case (Opcode_field[10:3])
+                    8'b10110100: ALU_operation <= 4'b0111; //pass B through
+                    default ALU_operation <= 4'b0111;      //pass B through
+                endcase
+            2'b10:
+               begin
+                    case(Opcode_field) 
+                        11'b10001011000: ALU_operation <= 4'b0010;
+                        11'b11001011000: ALU_operation <= 4'b0110;
+                        11'b10001010000: ALU_operation <= 4'b0000;
+                        11'b10101010000: ALU_operation <= 4'b0001;                    
+                        default ALU_operation <= 4'bzz10;
+                    endcase
+               end  
+             2'b11: 
+               begin
+                    case(Opcode_field) 
+                        11'b10001011000: ALU_operation <= 4'b0010;
+                        11'b11001011000: ALU_operation <= 4'b0110;
+                        11'b10001010000: ALU_operation <= 4'b0000;
+                        11'b10101010000: ALU_operation <= 4'b0001;                    
+                        default ALU_operation <= 4'b0111;
+                    endcase
+               end 
+            default ALU_operation <= 4'bzzzz;                 
+        endcase
+endmodule
+
+
+
+
+
+
+
+

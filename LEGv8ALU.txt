@@ -1,0 +1,41 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: CECS 530
+// Engineer: Julie Kim
+// 
+// Create Date: 09/10/2019 07:49:33 PM
+// Design Name: 
+// Module Name: LEGv8ALU
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+module LEGv8ALU(ALU_operation, A, B, ALU_result, Zero);
+    input [3:0] ALU_operation;
+    input [63:0] A, B;
+    output reg [63:0] ALU_result;
+    output wire Zero;
+    
+    always@(A, B, ALU_operation) 
+        case(ALU_operation)
+            0: ALU_result <= A&B;
+            1: ALU_result <= A|B;
+            2: ALU_result <= A+B;
+            6: ALU_result <= A-B;
+            7: ALU_result <= B;         //pass input B
+            12: ALU_result <= ~(A|B);
+            default ALU_result <= 64'bz;
+        endcase 
+                                           
+    assign Zero = (~|ALU_result)? 1'b1 : 1'b0;
+                                                    
+endmodule

@@ -1,0 +1,263 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 12/02/2020 10:22:42 PM
+// Design Name: 
+// Module Name: Lab9DataHzd_top
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+module Lab9DataHzd_top(clk, reset, imem_rd);
+
+    input clk, reset, imem_rd;
+    
+    //internal signal    
+    wire [31:0]  imem_out_wire;
+    wire [63:0]  pc_out_wire;   
+    wire [63:0]  branch_addr_wire;
+    wire         Zero_wire , Branch_wire ;     
+    //START==IFstg_1============================================================STAGE_1
+    InstructionMem1  INSTRUCTION_MEM_unit(
+                    .clk(clk), 
+                    .reset(reset), 
+                    .imem_rd(imem_rd), 
+                    .imem_out(imem_out_wire),
+                    .pc_out(pc_out_wire),
+                    .is_branch(Branch_wire),
+                    .branch_addr(branch_addr_wire),
+                    .Zero(Zero_wire));
+    
+    //START*F/ID pipeline register**********************************************PIPELINE_1 IF/ID PR-1
+    wire [299:0] ifIdOut_wire;  
+    wire    [10:0] opCfieldIfId;
+    wire    [31:0] imem_if_id;
+    wire    [63:0] pc_if_id;               
+    IF_ID_reg   IF_ID_PR_unit(
+                    .clk(clk),
+                    .reset(reset),
+                    .instr(imem_out_wire),
+                    .pc(pc_out_wire),
+                    .if_id_out(ifIdOut_wire));
+
+    assign  opCfieldIfId    = ifIdOut_wire[31:21];
+    assign  imem_if_id      = ifIdOut_wire[31:0];
+    assign  pc_if_id        = ifIdOut_wire[127:64];  
+    //END*********************************************************************END pipeline PR1-IF/ID PR-1
+     
+    //START=IDstg_2==============================================================STAGE_2, ID-2
+    wire Reg2Loc_wire, ALUSrc_wire, MemtoReg_wire, MemRead_wire;
+    wire RegWrite_wire, MemWrite_wire, ALUOp1_wire, ALUOp0_wire;  
+    wire [4:0]   imRtIfId, imRnIfId, imRmIfId, imRm_RtIfId; // rd_addr_2_wire;
+    wire [18:0]  offset_addr;                                                                                     
+    wire [63:0]  rd_data_1_wire, rd_data_2_wire, regDataA1, regDataB2;
+    wire [63:0]  ALU_result_wire;    
+    wire [63:0]  SE_offset_addr;    
+    
+    wire [2:0]   imOp3idEx;
+    wire [2:0]   imOp4exMem; //Instr EX/MEM op 3-lsb from 11bits; 000-add, 010-load  =========STAGE-2, ID-2  
+    wire [4:0]   imRd3idEx, imRt4exMem, imRt5MemWb;//Rt to compare in data haz unit in ID stage; 1 cycle ahead 
+    
+    wire         regWrMemWb, memToRegMemWb;
+    wire [4:0]   imRtMemWb;
+    wire [63:0]  mem_rd_data_wire;
+    wire [63:0]  wrDataWb, ALUoutExMem, ALUoutMemWb, memRdDataMemWb;  
+    InstructionDecoder  INSTRUCTION_ID_unit(
+                    .Opcode(opCfieldIfId), 
+                    .Reg2Loc(Reg2Loc_wire), 
+                    .ALUSrc(ALUSrc_wire),
+                    .MemtoReg(MemtoReg_wire), 
+                    .RegWrite(RegWrite_wire), 
+                    .MemRead(MemRead_wire), 
+                    .MemWrite(MemWrite_wire), 
+                    .Branch(Branch_wire), 
+                    .ALUOp1(ALUOp1_wire), 
+                    .ALUOp0(ALUOp0_wire)); 
+    //Hazard Detection unit
+    wire    [2:0] instrOpinIfId;  //========================================STAGE-2, ID-2 
+    wire    [2:0] hazDatAifId, hazDatBifId;     //output signals from IF/ID
+    assign  instrOpinIfId = opCfieldIfId[2:0];  //input 3-lsb instruction opcode; 000-add, 010-load 
+    assign  imRtIfId     = imem_if_id[4:0];     //Rt, destination address
+    assign  imRnIfId      = imem_if_id[9:5];    //Rn address used in HDetector, ID-2
+    assign  imRmIfId      = imem_if_id[20:16];  //Rm address used in HDetector, ID-2
+    HazDetector HAZDETECTOR_unit( //========================================STAGE-2, ID-2 
+                .instrID2(instrOpinIfId),
+                .instrEx3(imOp3idEx),
+                .instrMem4(imOp4exMem), 
+                .imRn2(imRnIfId),        //Rn in ID-2  [9:5]
+                .imRm2(imRmIfId),        //Rm in ID-2  [20:16]
+                .imRt5(imRt5MemWb),      //Rt from stage 5: WB-5
+                .imRt4(imRt4exMem),      //Rt from stage 4: MEM-4 stage
+                .imRd3(imRd3idEx),       //Rd from stage 3: Ex-3  stage
+                .HDSigA(hazDatAifId),    //output signal data haz A 
+                .HDSigB(hazDatBifId));   //output signal data haz B
+                
+    //Register file 
+    wire [4:0]  regRdAddrA1, regRdAddrB2;   
+    assign regRdAddrA1 = imRnIfId;
+    assign regRdAddrB2 = imRm_RtIfId;                                                                                   
+    registersFile REGFILE_unit(
+                .clk(clk), 
+                .reset(reset), 
+                .wr_en(regWrMemWb),
+                .wr_addr(imRtMemWb),  
+                .wr_data(wrDataWb),
+                .rd_addr_1(regRdAddrA1), 
+                .rd_addr_2(regRdAddrB2), //Rm
+                .rd_data_1(rd_data_1_wire),   
+                .rd_data_2(rd_data_2_wire));             
+    //1. Reg2Loc==1, Rt[4:0]    //for laod address load Rt, offset[Rn]
+    //0. Reg2Log==0, Rm[20:16]  //for Add Rm       Add  Rd, Rn, Rm       
+    assign imRm_RtIfId = (Reg2Loc_wire)? imem_if_id[4:0] : imem_if_id[20:16];  
+                                         //Rt or Rd[4:0]   //      Rm[20:16]                      
+    //check if it is branch instruction
+    assign offset_addr = (Branch_wire)? imem_if_id[23:5] : {10'b0, imem_if_id[20:12]};             
+    assign SE_offset_addr = {45'b0, offset_addr}; 
+    assign  regDataA1 =  rd_data_1_wire;
+    assign  regDataB2 =  rd_data_2_wire;                
+                    
+               
+    
+    //ID_EX pipeline register******************************************PIPELINE_2   
+    wire    [289:0]  idExIn_wire, idExOut_wire;  //281 bits +3+3+3 == 290 bits  
+    wire    [2:0]    hazDatAIdEx, hazDatBIdEx;   //output signals from IF/ID[287:284] 
+    wire    [2:0]    instrOpinIdEx;              //input 3-lsb instruction opcode; 000-add, 010-load [283:281]      
+    wire    reg2IdEx, aluSrcIdEx, aluOp1IdEx, aluOp0IdEx, regWrIdEx;//[280:277]
+    wire    memToRegIdEx, brIdEx, memRdIdEx, memWrIdEx;             //[276:272]  
+    wire    [10:0]  opCFieldIdEx;                                   //[271:261] 11-bit
+    wire    [63:0]  pcIdEx, SE_AddrIdEx;                            //[260:197], [196:133]
+    wire    [4:0]   imRtIdEx;                                       //[132:128]
+    wire    [63:0]  rDataA1IdEx, rDataB2IdEx;                       //[127:64], [63:0]
+    wire    [63:0]  brAddrIdEx;                                              
+    ID_EX_reg   ID_EX_PR_unit ( //PR2, ID/Ex pipeline reg************P Register_2
+            .clk(clk),
+            .reset(reset),
+            .idExIn({10'b0, idExIn_wire}),
+            .idExOut(idExOut_wire)
+            );
+    assign  idExIn_wire = {hazDatAifId, hazDatBifId, instrOpinIfId,            //[289:281] 2, 2, 3-bits
+                          Reg2Loc_wire, ALUSrc_wire, ALUOp1_wire, ALUOp0_wire, //[280:277]
+                          RegWrite_wire,MemtoReg_wire,Branch_wire,MemRead_wire,MemWrite_wire,//[276:272]  
+                          imem_if_id[31:21], pc_if_id, SE_offset_addr, //[271:261] 11-bit, [260:197], [196:133]
+                          imem_if_id[4:0], rd_data_1_wire, rd_data_2_wire };   //[132:128], [127:64], [63:0]   
+    assign  hazDatAIdEx     = idExOut_wire[289:287];  //hazardA signal from ID/EX 3-bit
+    assign  hazDatBIdEx     = idExOut_wire[286:284];  //hazardB signal from ID/EX 3-bit
+    assign  instrOpinIdEx   = idExOut_wire[283:281];  //Instr ID/EX op 3-lsb from 11bits; 000-add, 010-load
+    assign  reg2IdEx        = idExOut_wire[280];
+    assign  aluSrcIdEx      = idExOut_wire[279];
+    assign  aluOp1IdEx      = idExOut_wire[278];
+    assign  aluOp0IdEx      = idExOut_wire[277];
+    assign  regWrIdEx       = idExOut_wire[276];
+    assign  memToRegIdEx    = idExOut_wire[275];
+    assign  brIdEx          = idExOut_wire[274];
+    assign  memRdIdEx       = idExOut_wire[273];
+    assign  memWrIdEx       = idExOut_wire[272]; 
+    assign  opCFieldIdEx    = idExOut_wire[271:261]; //11 bits
+    assign  pcIdEx          = idExOut_wire[260:197]; //64 bits
+    assign  SE_AddrIdEx     = idExOut_wire[196:133]; //64 bits
+    assign  imRtIdEx        = idExOut_wire[132:128]; //5 bits
+    assign  rDataA1IdEx     = idExOut_wire[127:64];
+    assign  rDataB2IdEx     = idExOut_wire[63:0];    
+    //branch signal
+    assign  branch_addr_wire = (brIdEx)? (SE_AddrIdEx << 2): 64'b0; 
+    assign  brAddrIdEx = pcIdEx + branch_addr_wire;
+    //END ID_EX pipeline register***************************************END PR-2 ID/EX-2
+    
+     
+    //START Exstg-3=====================================================STAGE-3 EX-3       
+    //FORWARDING  unit
+    wire    [63:0] aluDataAin, aluDataBin; 
+    assign  aluDataAin =  (hazDatAIdEx==1)? ALUoutMemWb:   //data from alu PR4 memWb
+                          (hazDatAIdEx==2)? memRdDataMemWb://data from mem read PR4 memWb
+                          (hazDatAIdEx==3)? ALUoutExMem: rDataA1IdEx;   //data from alu PR3 exMem 
+    assign  aluDataBin =  (hazDatBIdEx==1)? ALUoutMemWb:   //data from alu PR4 memWb
+                          (hazDatBIdEx==2)? memRdDataMemWb://data from mem read PR4 memWb
+                          (hazDatBIdEx==3)? ALUoutExMem: rDataB2IdEx;   //data from alu PR3 exMem 
+                          
+    //ALU unit                                                                                                     
+    ALUwithControls1 ALUwithCONTROL_unit(
+            .addr_cal(aluSrcIdEx), 
+            .ALU_SE_addr(SE_AddrIdEx),
+            .rd_data_1(aluDataAin), //dt from FW unit
+            .rd_data_2(aluDataBin), //dt from FW unit
+            .ALU_op({aluOp1IdEx,aluOp0IdEx}), 
+            .Opcode_field(opCFieldIdEx),            //input
+            .ALU_out(ALU_result_wire),              //output 64 bits
+            .Zero(Zero_wire));                      //output 1 bit
+    assign  imRd3idEx   =  imRtIdEx;                //Rd3 address to use in ID-2 stage 
+    assign  imOp3idEx   =  instrOpinIdEx;
+    //END========================================================================END stg_3 EX
+    
+    //START=Ex_Mem***************************************************************PIPELINE-3 EX/MEM-3
+    wire    [205:0] exMemIn_wire, exMemOut_wire;                              //203 + 3 == 206 bits
+    wire    [2:0]   instrOpinExMem; //Instr EX/MEM op 3-lsb from 11bits; 000-add, 010-load [205:203]
+    wire    [63:0]  brAddrExMem, rDataB2ExMem;                                //[202:139], [127:64], [63:0]
+    wire    regWrExMem,memToRegExMem,brExMem,memRdExMem,memWrExMem,ZeroExMem; //[138:133]  
+    wire    [4:0]   imRtExMem;                                                //[132:128]                            
+    Ex_Mem_reg EX_MEM_PR_unit ( //PR3, Ex/Mem pipeline reg**********************PIPELINE-3 EX/MEM-3
+            .clk(clk), 
+            .reset(reset), 
+            .exMemIn({94'b0, exMemIn_wire}), 
+            .exMemOut(exMemOut_wire));   
+    assign  exMemIn_wire = {instrOpinIdEx, brAddrIdEx,                //[205:203], [202:139]
+                            regWrIdEx,memToRegIdEx,brIdEx,memRdIdEx,memWrIdEx,Zero_wire, //[138:133]
+                            imRtIdEx, ALU_result_wire, rDataB2IdEx }; //[132:128], [127:64], [63:0]   
+    assign  instrOpinExMem  = exMemOut_wire[205:203]; //Instr EX/MEM op 3-lsb from 11bits; 000-add, 010-load
+    assign  brAddrExMem     = exMemOut_wire[202:139]; //64 bits
+    assign  regWrExMem      = exMemOut_wire[138];
+    assign  memToRegExMem   = exMemOut_wire[137];
+    assign  brExMem         = exMemOut_wire[136];
+    assign  memRdExMem      = exMemOut_wire[135];
+    assign  memWrExMem      = exMemOut_wire[134];
+    assign  ZeroExMem       = exMemOut_wire[133];
+    assign  imRtExMem       = exMemOut_wire[132:128]; //5 bits
+    assign  ALUoutExMem     = exMemOut_wire[127:64];
+    assign  rDataB2ExMem    = exMemOut_wire[63:0];        
+    //END Ex_Mem*********************************************************END*******EX/MEM-3
+    
+            
+    //START=MEM-4========================================================START-4 MEM-4      
+    DataMem  DataMem_unit(
+            .clk(clk), 
+            .reset(reset), 
+            .mem_wr(memWrExMem), 
+            .mem_rd(memRdExMem), 
+            .mem_addr(ALUoutExMem[7:0]),
+            .wr_data(rDataB2ExMem),         //store, write to mem
+            .rd_data(mem_rd_data_wire));    //load, write to register  
+    assign  imRt4exMem   =  imRtExMem;      //Rt4 to use in ID-2 stage
+    assign  imOp4exMem   =  instrOpinExMem; //instrOp 3-lsb to use in ID-2 stage
+    //END==============================================================END-4========MEM-4 
+      
+                       
+    //START*Mem_WB pipeline register**********************************PIPELINE-4
+    wire    [134:0] memWbIn_wire, memWbOut_wire; //135 bits
+    //Pipeline_4, Mem/WB
+    MEM_WB_reg MEM_WB_PR_unit ( //************************************PR4, Mem/Wb pipeline reg
+            .clk(clk), 
+            .reset(reset), 
+            .memWbIn({165'b0, memWbIn_wire}), 
+            .memWbOut(memWbOut_wire)); 
+    assign  memWbIn_wire = {regWrExMem, memToRegExMem,imRtExMem, //[134:133], [132:128]
+                                    ALUoutExMem, mem_rd_data_wire};//[127:64], [63:0]  
+                                     
+    assign  regWrMemWb      = memWbOut_wire[134];
+    assign  memToRegMemWb   = memWbOut_wire[133];
+    assign  imRtMemWb       = memWbOut_wire[132:128];//write back address
+    assign  ALUoutMemWb     = memWbOut_wire[128:64]; //aluout reslut
+    assign  memRdDataMemWb  = memWbOut_wire[63:0];   //mem read data
+                               
+    //START--WBstg_5==================================================STAG-5      
+    assign wrDataWb = (memToRegMemWb)? memRdDataMemWb : ALUoutMemWb; 
+    assign imRt5MemWb = imRtMemWb;                                                                              
+endmodule

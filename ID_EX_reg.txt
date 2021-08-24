@@ -1,0 +1,38 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 11/30/2020 12:52:47 AM
+// Design Name: 
+// Module Name: ID_EX_reg
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+module ID_EX_reg(clk, reset, idExIn, idExOut);
+    input clk, reset;
+    input   [299:0] idExIn;
+    output  [299:0] idExOut;
+    
+    reg     [299:0] qOut;
+        
+    always @(posedge clk, posedge reset)
+        if(reset)
+            qOut <= 300'b0;
+        else 
+            qOut <= idExIn;
+            
+    assign idExOut= qOut;
+endmodule
+
+

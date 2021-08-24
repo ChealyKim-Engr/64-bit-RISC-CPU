@@ -1,0 +1,55 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 12/01/2020 10:01:52 PM
+// Design Name: 
+// Module Name: HazDetector
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+module HazDetector(instrID2, instrEx3, instrMem4, imRn2, imRm2, imRt5, imRt4, imRd3, 
+                    HDSigA, HDSigB);
+    input   [2:0]   instrID2, instrEx3, instrMem4;
+    input   [4:0]   imRn2, imRm2, imRt5, imRt4, imRd3;
+    output  [2:0]   HDSigA, HDSigB;
+    reg     [2:0]   HDSigA, HDSigB;
+      
+    always@(*) 
+    begin
+        if ((imRn2==imRt4)&&(instrID2 == 3'b000)&&(instrMem4 == 3'b000))
+            HDSigA = 3'd1; //ALUout from Pr4 as forwarding input
+        else if ((imRn2==imRt4)&&(instrID2 == 3'b000)&&(instrMem4 == 3'b010))
+            HDSigA = 3'd2; //mem read Data from Pr4 as forwarding input
+        else if ((imRn2==imRd3)&&(instrID2 == 3'b000)&&(instrEx3 == 3'b000))
+            HDSigA = 3'd3; //ALUout from Pr3 as forwarding input  
+        else if ((imRn2 == imRt5)&&(imRn2!=imRt4)&&(imRn2!=imRd3))
+            HDSigA = 3'd4;  
+        else
+            HDSigA = 3'd0;   
+            
+        //==================================================================                          
+        if ((imRm2==imRt4)&&(instrID2 == 3'b000)&&(instrMem4 == 3'b000))
+            HDSigB = 3'd1; //ALUout from Pr4 as forwarding input             
+        else if ((imRm2==imRt4)&&(instrID2 == 3'b000)&&(instrMem4 == 3'b010))
+            HDSigB = 3'd2; //mem read Data from Pr4 as forwarding input 
+        else if ((imRm2==imRd3)&&(instrID2 == 3'b000)&&(instrEx3 == 3'b000))
+            HDSigB = 3'd3; //ALUout from Pr3 as forwarding input  
+        //indicate ID2 is not load        
+        else if ((imRm2 == imRt5)&&(imRm2!=imRt4)&&(imRm2!=imRd3)&&(instrID2 == 3'b000)) 
+            HDSigB = 3'd4;  
+        else
+            HDSigB = 3'd0;      
+    end                          
+endmodule

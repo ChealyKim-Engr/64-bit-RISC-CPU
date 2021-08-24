@@ -1,0 +1,416 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 12/02/2020 10:24:08 PM
+// Design Name: 
+// Module Name: Lab9DataHzd_top_tb
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+////////////////////////////////////////////////////////////////////////////////
+
+module Lab9DataHzd_top_tb;
+                                           
+      //input signal
+      reg   clk, reset, imem_rd;
+      
+      Lab9DataHzd_top uut(
+                    .clk(clk), 
+                    .reset(reset), 
+                    .imem_rd(imem_rd));         
+       integer i = 0;      
+       //create 10ns clock
+       always  #10 clk = ~clk;   
+       initial begin              
+          clk = 1'b1;
+          reset = 1'b0;          
+          
+          for (i=0; i<256; i=i+4) 
+          begin
+              InstructionMem1.RF[i + 0] = 8'h00;
+              InstructionMem1.RF[i + 1] = 8'h00;
+              InstructionMem1.RF[i + 2] = 8'h00;
+              InstructionMem1.RF[i + 3] = 8'h00; 
+          end                      
+          //32'b11111000010_0 0000 1000_00_01111_00001  ;8
+          //32'b11111000 010_00000 1000_00_01 111_00001
+          InstructionMem1.RF[0 + 0] = 8'b11111000;
+          InstructionMem1.RF[0 + 1] = 8'b010_00000;
+          InstructionMem1.RF[0 + 2] = 8'b1000_0011;
+          InstructionMem1.RF[0 + 3] = 8'b111_00001;  //1
+           
+          //32'b11111000010_0 0001 0000_00_00 000_00010  ;16
+          //32'b11111000 010_0 0001 0000_00_00 00000010
+          InstructionMem1.RF[4 + 0] = 8'b11111000;
+          InstructionMem1.RF[4 + 1] = 8'b010_00001;
+          InstructionMem1.RF[4 + 2] = 8'b0000_0011;
+          InstructionMem1.RF[4 + 3] = 8'b111_00010;   //2       
+          
+          //32'b11111000010_0 0001 1000_00_00000_00011  ;24
+          //32'b11111000 01000001 10000000 00000011
+          InstructionMem1.RF[8 + 0] = 8'b11111000;
+          InstructionMem1.RF[8 + 1] = 8'b010_00001;
+          InstructionMem1.RF[8 + 2] = 8'b1000_0011;
+          InstructionMem1.RF[8 + 3] = 8'b111_00011;                     
+          
+          //32'b11111000010_0 0010 0000_00_00000_00100  ;32
+          //32'b11111000--010_0 0010--  0000_00_00  000_00100 
+          InstructionMem1.RF[12 + 0] = 8'b11111000;
+          InstructionMem1.RF[12 + 1] = 8'b010_00010;
+          InstructionMem1.RF[12 + 2] = 8'b0000_0011;
+          InstructionMem1.RF[12 + 3] = 8'b111_00100; //4                 
+          
+          //32'b11111000010_0 0010 1000_00_00000_00101; ;40
+          //32'b11111000--010_0 0010 --1000_00_00--000_00101
+          InstructionMem1.RF[16 + 0] = 8'b11111000;
+          InstructionMem1.RF[16 + 1] = 8'b010_00010;
+          InstructionMem1.RF[16 + 2] = 8'b1000_0011;
+          InstructionMem1.RF[16 + 3] = 8'b111_00101; //5
+                  
+          //32'b11111000010_0 0011 0000_00_00000_00110;  48
+          //32'b11111000---010_0 0011 ---0000_00_00---000_00110; 
+          InstructionMem1.RF[20 + 0] = 8'b11111000;
+          InstructionMem1.RF[20 + 1] = 8'b010_00011;
+          InstructionMem1.RF[20 + 2] = 8'b0000_0011;
+          InstructionMem1.RF[20 + 3] = 8'b111_00110;   //6      
+          
+          //32'b11111000010_0 0011 1000_00_00000_00111;  56
+          //32'b11111000---010_0 0011 ---1000_00_00--000_00111; 
+          InstructionMem1.RF[24 + 0] = 8'b11111000;
+          InstructionMem1.RF[24 + 1] = 8'b010_00011;
+          InstructionMem1.RF[24 + 2] = 8'b1000_0011;
+          InstructionMem1.RF[24 + 3] = 8'b111_00111;//7
+          
+          //32'b11111000010_0 0100 0000_00_00000_01000;  64
+          //32'b11111000---010_0 0100 ---0000_00_00---000_01000;
+          InstructionMem1.RF[28 + 0] = 8'b11111000;
+          InstructionMem1.RF[28 + 1] = 8'b010_0_0100 ;
+          InstructionMem1.RF[28 + 2] = 8'b0000_0011;
+          InstructionMem1.RF[28 + 3] = 8'b111_01000; //8
+           
+          //32'b11111000010_0 0100 1000_00_00000_01001;  72
+          //32'b11111000---010_0 0100 ----1000_00_00---000_01001;
+          InstructionMem1.RF[32 + 0] = 8'b11111000;
+          InstructionMem1.RF[32 + 1] = 8'b010_0_0100 ;
+          InstructionMem1.RF[32 + 2] = 8'b1000_0011;
+          InstructionMem1.RF[32 + 3] = 8'b111_01001;    //9     
+           
+          //32'b11111000010_0 0101 0000_00_00000_01010;  80
+          //32'b11111000---010_0 0101 ---0000_00_00---000_01010;
+          InstructionMem1.RF[36 + 0] = 8'b11111000;
+          InstructionMem1.RF[36 + 1] = 8'b010_0_0101  ;
+          InstructionMem1.RF[36 + 2] = 8'b0000_0011;
+          InstructionMem1.RF[36 + 3] = 8'b111_01010;    //10       
+          
+          //32'b11111000010_0 0101 1000_00_00000_01011;  88
+          //32'b11111000---010_0 0101 ----1000_00_00---000_01011;
+          InstructionMem1.RF[40 + 0] = 8'b11111000;
+          InstructionMem1.RF[40 + 1] = 8'b010_0_0101 ;
+          InstructionMem1.RF[40 + 2] = 8'b1000_0011;
+          InstructionMem1.RF[40 + 3] = 8'b111_01011;    //11       
+          
+          //32'b11111000010_0 0110 0000_00_00000_01100;  96
+          //32'b11111000---010_0 0110 ----0000_00_00---000_01100; 
+          InstructionMem1.RF[44 + 0] = 8'b11111000;
+          InstructionMem1.RF[44 + 1] = 8'b010_0_0110 ;
+          InstructionMem1.RF[44 + 2] = 8'b0000_0011;
+          InstructionMem1.RF[44 + 3] = 8'b111_01100;     //12  
+              
+ ///****R-type ADD, SUB, OR, AND **********R-type ADD, SUB, OR, AND                   
+           //ADD X2, X31, X1  ; Rd, Rn, Rm
+           //32'b10001011000_00001_000000_11111_00010;
+           //32'b10001011 000_00001_ 000000_01 111_00010;                                    
+           InstructionMem1.RF[48 + 0] = 8'b10001011;
+           InstructionMem1.RF[48 + 1] = 8'b000_00011; //Rm == x3.....10
+           //InstructionMem1.RF[48 + 1] = 8'b000_00001; //Rm == x1
+           InstructionMem1.RF[48 + 2] = 8'b000000_11;
+           InstructionMem1.RF[48 + 3] = 8'b111_00010;
+           
+                      //  x2
+            //SUB X5, X4, X3    ; Rd, Rn, Rm ; data1, data2
+            //32'b11001011000_00011_000000_00100_00101;
+            //32'b11001011 000_00011_ 000000_00 100_00101;            
+            InstructionMem1.RF[52 + 0] = 8'b11001011;
+          InstructionMem1.RF[52 + 1] = 8'b000_00010;  //Rm==2
+         //   InstructionMem1.RF[52 + 1] = 8'b000_00011;//Rm==3
+            InstructionMem1.RF[52 + 2] = 8'b000000_00;
+            InstructionMem1.RF[52 + 3] = 8'b100_00101;
+                      
+                        //x2
+            //AND X8, X6, X7 ; Rd, Rn, Rm    ; data1, data2
+            //32'b10001010000_00111_000000_00110_01000;
+            //32'b10001010 000_00111_ 000000_00 110_01000; 
+            InstructionMem1.RF[56 + 0] = 8'b10001010;
+            InstructionMem1.RF[56 + 1] = 8'b000_00010;  //Rm==2
+        //  InstructionMem1.RF[56 + 1] = 8'b000_00111;//Rm==7
+            InstructionMem1.RF[56 + 2] = 8'b000000_00;
+            InstructionMem1.RF[56 + 3] = 8'b110_01000;             
+            
+                         //x2
+            //OR X12, X9, X2  ; Rd, Rn, Rm    ; data1, data2
+            //32'b10101010000_00010_000000_01001_01100;
+            //32'b10101010 000_00010_ 000000_01 001_01100; 
+            InstructionMem1.RF[60 + 0] = 8'b10101010;
+            InstructionMem1.RF[60 + 1] = 8'b000_00010;  //Rm==2
+          //InstructionMem1.RF[60 + 1] = 8'b000_01010;  //Rm==10
+            InstructionMem1.RF[60 + 2] = 8'b000000_01;
+            InstructionMem1.RF[60 + 3] = 8'b001_01100;                           
+                      
+          @(negedge clk)
+          reset = 1'b1;      
+          @(negedge clk) 
+          reset = 0;
+          imem_rd = 1'b1;
+          registersFile.RF[0]  = 64'h0000000000000000;
+          registersFile.RF[1]  = 64'hddddddddaaaaaaaa;
+          registersFile.RF[2]  = 64'hefefefefefefefef;
+          $display("                   load R1, 8(R0) ");
+          $display("Instruction Mem[0]=%b_%b_%b_%b", 
+          InstructionMem1.RF[0],
+          InstructionMem1.RF[1],
+          InstructionMem1.RF[2],
+          InstructionMem1.RF[3]);               
+          $display("                   load R2, 16(R0) ");
+          $display("Instruction Mem[4]=%b_%b_%b_%b", 
+          InstructionMem1.RF[4],
+          InstructionMem1.RF[5],
+          InstructionMem1.RF[6],
+          InstructionMem1.RF[7]);             
+          $display("                   load R3, 24(R0) ");
+          $display("Instruction Mem[8]=%b_%b_%b_%b", 
+          InstructionMem1.RF[8],
+          InstructionMem1.RF[9],
+          InstructionMem1.RF[10],
+          InstructionMem1.RF[11]);         
+          $display("                   load R4, 32(R0) ");
+          $display("Instruction Mem[12]=%b_%b_%b_%b", 
+          InstructionMem1.RF[12],
+          InstructionMem1.RF[13],
+          InstructionMem1.RF[14],
+          InstructionMem1.RF[15]);          
+          $display("                   load R5, 40(R0) ");
+          $display("Instruction Mem[16]=%b_%b_%b_%b", 
+          InstructionMem1.RF[16],
+          InstructionMem1.RF[17],
+          InstructionMem1.RF[18],
+          InstructionMem1.RF[19]);         
+          $display("                   load R6, 48(R0) ");   
+          $display("Instruction Mem[20]=%b_%b_%b_%b", 
+          InstructionMem1.RF[20],
+          InstructionMem1.RF[21],
+          InstructionMem1.RF[22],
+          InstructionMem1.RF[23]);             
+          $display("                   load R7, 56(R0) "); 
+          $display("Instruction Mem[24]=%b_%b_%b_%b", 
+          InstructionMem1.RF[24],
+          InstructionMem1.RF[25],
+          InstructionMem1.RF[26],
+          InstructionMem1.RF[27]);           
+          $display("                   load R8, 64(R0) ");      
+          $display("Instruction Mem[28]=%b_%b_%b_%b", 
+          InstructionMem1.RF[28],
+          InstructionMem1.RF[29],
+          InstructionMem1.RF[30],
+          InstructionMem1.RF[31]);            
+          $display("                   load R9, 72(R0) ");    
+          $display("Instruction Mem[32]=%b_%b_%b_%b", 
+          InstructionMem1.RF[32],
+          InstructionMem1.RF[33],
+          InstructionMem1.RF[34],
+          InstructionMem1.RF[35]);           
+          $display("                   load R10, 80(R0) ");      
+          $display("Instruction Mem[36]=%b_%b_%b_%b", 
+          InstructionMem1.RF[36],
+          InstructionMem1.RF[37],
+          InstructionMem1.RF[38],
+          InstructionMem1.RF[39]);          
+          $display("                   load R11, 88(R0) ");      
+          $display("Instruction Mem[40]=%b_%b_%b_%b", 
+          InstructionMem1.RF[40],
+          InstructionMem1.RF[41],
+          InstructionMem1.RF[42],
+          InstructionMem1.RF[43]);
+          $display("                   load R12, 96(R0) ");      
+          $display("Instruction Mem[44]=%b_%b_%b_%b", 
+          InstructionMem1.RF[44],
+          InstructionMem1.RF[45],
+          InstructionMem1.RF[46],
+          InstructionMem1.RF[47]);          
+          $display("                    NO INSTRUCTION ");      
+          $display("Instruction Mem[48]=%b_%b_%b_%b", 
+          InstructionMem1.RF[48],
+          InstructionMem1.RF[49],
+          InstructionMem1.RF[50],
+          InstructionMem1.RF[51]);                  
+          $display(" ");           
+          $display("Register_1=%h", 
+          registersFile.RF[1]);                                                         
+          $display("Register_2=%h", 
+          registersFile.RF[2]);
+          $display("Register_31=%h", 
+          registersFile.RF[31]);                          
+          #45    
+          @(negedge clk)
+          $display("imem_if_id=%b", 
+          uut.imem_if_id);
+          $display("pc_if_id=%d", 
+          uut.pc_if_id);
+          
+          //#350
+          #400
+          imem_rd = 0;
+
+          $display();  
+          $display("Register_0=%h", 
+          registersFile.RF[0]);                                                         
+          $display("Register_1=%h", 
+          registersFile.RF[1]);         
+          $display("Register_2=%h", 
+          registersFile.RF[2]);         
+          $display("Register_3=%h", 
+          registersFile.RF[3]);                         
+          $display("Register_4=%h", 
+          registersFile.RF[4]);                                                        
+          $display("Register_5=%h", 
+          registersFile.RF[5]);                     
+          $display("Register_6=%h", 
+          registersFile.RF[6]);                                                         
+          $display("Register_7=%h", 
+          registersFile.RF[7]);       
+          $display("Register_8=%h", 
+          registersFile.RF[8]);          
+          $display("Register_9=%h", 
+          registersFile.RF[9]);                          
+          $display("Register_10=%h", 
+          registersFile.RF[10]);                                                         
+          $display("Register_11=%h", 
+          registersFile.RF[11]);
+          $display("Register_12=%h", 
+          registersFile.RF[12]);                                      
+ //*************************************Data Mem          
+           $display();
+           $display("Data Memory");           
+           $display("DM[8]=%h%h%h%h%h%h%h%h", 
+           DataMem.RF[8],
+           DataMem.RF[9],
+           DataMem.RF[10],
+           DataMem.RF[11],
+           DataMem.RF[12],
+           DataMem.RF[13],
+           DataMem.RF[14],
+           DataMem.RF[15]);           
+           $display("DM[16]=%h%h%h%h%h%h%h%h", 
+           DataMem.RF[16],
+           DataMem.RF[17],
+           DataMem.RF[18],
+           DataMem.RF[19],
+           DataMem.RF[20],
+           DataMem.RF[21],
+           DataMem.RF[22],
+           DataMem.RF[23]);           
+           $display("DM[24]=%h%h%h%h%h%h%h%h", 
+           DataMem.RF[24],
+           DataMem.RF[25],
+           DataMem.RF[26],
+           DataMem.RF[27],
+           DataMem.RF[28],
+           DataMem.RF[29],
+           DataMem.RF[30],
+           DataMem.RF[31]);          
+           $display("DM[32]=%h%h%h%h%h%h%h%h", 
+           DataMem.RF[32],
+           DataMem.RF[33],
+           DataMem.RF[34],
+           DataMem.RF[35],
+           DataMem.RF[36],
+           DataMem.RF[37],
+           DataMem.RF[38],
+           DataMem.RF[39]);
+           $display("DM[40]=%h%h%h%h%h%h%h%h", 
+           DataMem.RF[40],
+           DataMem.RF[41],
+           DataMem.RF[42],
+           DataMem.RF[43],
+           DataMem.RF[44],
+           DataMem.RF[45],
+           DataMem.RF[46],
+           DataMem.RF[47]);          
+           $display("DM[48]=%h%h%h%h%h%h%h%h", 
+           DataMem.RF[48],
+           DataMem.RF[49],
+           DataMem.RF[50],
+           DataMem.RF[51],
+           DataMem.RF[52],
+           DataMem.RF[53],
+           DataMem.RF[54],
+           DataMem.RF[55]);          
+           $display("DM[56]=%h%h%h%h%h%h%h%h", 
+           DataMem.RF[56],
+           DataMem.RF[57],
+           DataMem.RF[58],
+           DataMem.RF[59],
+           DataMem.RF[60],
+           DataMem.RF[61],
+           DataMem.RF[62],
+           DataMem.RF[63]);          
+           $display("DM[64]=%h%h%h%h%h%h%h%h", 
+           DataMem.RF[64],
+           DataMem.RF[65],
+           DataMem.RF[66],
+           DataMem.RF[67],
+           DataMem.RF[68],
+           DataMem.RF[69],
+           DataMem.RF[70],
+           DataMem.RF[71]);                    
+           $display("DM[72]=%h%h%h%h%h%h%h%h", 
+           DataMem.RF[72],
+           DataMem.RF[73],
+           DataMem.RF[74],
+           DataMem.RF[75],
+           DataMem.RF[76],
+           DataMem.RF[77],
+           DataMem.RF[78],
+           DataMem.RF[79]);          
+           $display("DM[80]=%h%h%h%h%h%h%h%h", 
+           DataMem.RF[80],
+           DataMem.RF[81],
+           DataMem.RF[82],
+           DataMem.RF[83],
+           DataMem.RF[84],
+           DataMem.RF[85],
+           DataMem.RF[86],
+           DataMem.RF[87]);          
+           $display("DM[88]=%h%h%h%h%h%h%h%h", 
+           DataMem.RF[88],
+           DataMem.RF[89],
+           DataMem.RF[90],
+           DataMem.RF[91],
+           DataMem.RF[92],
+           DataMem.RF[93],
+           DataMem.RF[94],
+           DataMem.RF[95]);                   
+           $display("DM[96]=%h%h%h%h%h%h%h%h", 
+           DataMem.RF[96],
+           DataMem.RF[97],
+           DataMem.RF[98],
+           DataMem.RF[99],
+           DataMem.RF[100],
+           DataMem.RF[101],
+           DataMem.RF[102],
+           DataMem.RF[103]);                                                                                      
+       end   //end of initial begin           
+endmodule
+                                           
+
+
+

@@ -1,0 +1,63 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 11/29/2020 02:18:20 PM
+// Design Name: 
+// Module Name: InstructionMem1
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+module InstructionMem1(clk, reset, imem_rd, is_branch, 
+                        branch_addr, Zero, imem_out, pc_out);
+
+    input   clk, reset, imem_rd, is_branch, Zero;
+    input   [63:0] branch_addr;
+    
+    //output signals: instructionMem(32), pc_out(64)
+    output  [31:0] imem_out;
+    wire    [31:0] imem_out;
+    output  [63:0] pc_out;
+    wire    [63:0] pc_out;
+    
+    //array of registers
+    reg [7:0] RF [0:255];
+    
+    //program counter
+    reg [63:0] pc_register;
+        
+    integer i;
+    
+    always @(posedge clk, posedge reset)
+        if (reset)
+            begin
+                pc_register <= 64'b0;
+            end 
+        else if (is_branch & Zero)
+            begin
+                pc_register <= branch_addr + pc_register;
+            end                    
+        else 
+            begin
+                RF[pc_register[7:0]] <= RF[pc_register[7:0]];
+                pc_register <= pc_register + 4;
+            end
+            
+     assign imem_out = ((imem_rd))? 
+                       {RF[pc_register + 0], RF[pc_register + 1], 
+                       RF[pc_register + 2],RF[pc_register + 3]} : imem_out;   
+                       
+     assign pc_out   = pc_register;
+                                      
+endmodule
